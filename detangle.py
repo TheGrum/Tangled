@@ -291,6 +291,7 @@ if __name__=='__main__':
                 if last_success > max_iterations_without_improvement and intensity == 1:
                     intensity = 0
         count += 1
+    write("result.dat")
                 
                     
                 
