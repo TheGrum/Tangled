@@ -11,6 +11,9 @@ minimizing on all combinations of trees.
 
 Results are output in result1.dat and result2.dat - the program alternates the filename so if you use
 ctrl-c to break the execution, one of the two files will have valid data, even if you break during a write.
+
+Results are not the same with every run - the algorithm is stochastic, and may find different local
+minima, so multiple runs are recommended.
 """
 
 from sys import argv
@@ -27,6 +30,7 @@ Max Count = stop after this many iterations - you can use ctrl-c to stop prematu
 Max Iterations = reduce this if you want it to stop when it reaches Intensity 1 and no improvement
 is seen for this many iterations
 Intensity Reduction = what percent to reduce the intensity to each step
+Skip First Tree = 0 for reordering all trees, 1 to leave the first tree fixed
 
 Note that because the iterations are done for each of the trees, the max_iterations may stop
 the process before the max_count implies it should, because it is actually counting num_trees times
@@ -35,9 +39,10 @@ as fast.
 
 starting_intensity = 50
 number_of_iterations_before_reducing_intensity = 50
-max_count = 9999
-max_iterations_without_improvement = 9999
+max_count = 5000
+max_iterations_without_improvement = 5000
 intensity_reduction = 0.99
+skip_first_tree = 0
 
 class tree:
     """ tree: this class encapsulates the individual trees, and anchors the root
@@ -187,7 +192,7 @@ def tangle_count(a, b):
     t = dict((b[i],i) for i in range(0,len(b)))
     
     for i in range(1,min(len(a),len(b))):
-        if t[a[i]] > t[a[i-1]]:
+        if t[a[i]] < t[a[i-1]]:
             count += 1
     return count
 
@@ -206,7 +211,7 @@ def write(filename):
     with open(filename, 'w') as f:
         f.write("#NEXUS \n\n\n")
         f.write("Begin trees;\n")
-        for tr in trees.itervalues():
+        for tr in tree_list:
             tr.write(f)
             f.write("\n\n")
         f.write("end;\n")
@@ -219,9 +224,11 @@ def minimize_this():
     values to adjust the importance of alphabetizing vs. tangling
     or you can add your own measure to be minimized. """
     return tangle_count_all() + (alpha_count_all()*0.5)
-        
+
+tree_list = []        
 trees = {}
 twists = {}
+first_tree = None
 
 if __name__=='__main__':
     """
@@ -238,6 +245,9 @@ if __name__=='__main__':
         #line = line.trim()
         if line[0:4] == 'tree':
             tr = tree(line)
+            if first_tree == None:
+                first_tree = tr.name
+            tree_list.append(tr)
             trees[tr.name] = tr
             twists[tr.name] = tr.get_twists()
             #print trees
@@ -257,28 +267,29 @@ if __name__=='__main__':
     while intensity > 0 and count < max_count:
         print "Iteration " + str(count) + ", Intensity " + str(intensity) + ", Optimize " + str(best) + ", Tangle Count " + str(tangle_count_all())
         for i in range(0,len(trees)):
-            t = list(twists[twists.keys()[i]])
-            t2 = list(t)
-            for j in range(0,intensity):
-                t[random.randint(0,len(t)-1)] += 1
-            trees[trees.keys()[i]].apply_twists(t)
-            cur = minimize_this()
-            if cur < best:
-                """ If we succeeded in finding a better result, preserve it """
-                last_success = 0
-                twists[twists.keys()[i]] = t
-                best = cur
-                write("result" + str(flip) + ".dat")
-                flip = 3 - flip 
-            else:
-                """ Our new result is no better, keep the old tree """
-                trees[trees.keys()[i]].apply_twists(t2)
-                last_success += 1
-            if last_success > number_of_iterations_before_reducing_intensity and intensity > 1:
-                intensity = int(intensity * intensity_reduction)
-                last_success = 0
-            if last_success > max_iterations_without_improvement and intensity == 1:
-                intensity = 0
+            if skip_first_tree == 0 or trees[trees.keys()[i]].name <> first_tree:
+                t = list(twists[twists.keys()[i]])
+                t2 = list(t)
+                for j in range(0,intensity):
+                    t[random.randint(0,len(t)-1)] += 1
+                trees[trees.keys()[i]].apply_twists(t)
+                cur = minimize_this()
+                if cur < best:
+                    """ If we succeeded in finding a better result, preserve it """
+                    last_success = 0
+                    twists[twists.keys()[i]] = t
+                    best = cur
+                    write("result" + str(flip) + ".dat")
+                    flip = 3 - flip 
+                else:
+                    """ Our new result is no better, keep the old tree """
+                    trees[trees.keys()[i]].apply_twists(t2)
+                    last_success += 1
+                if last_success > number_of_iterations_before_reducing_intensity and intensity > 1:
+                    intensity = int(intensity * intensity_reduction)
+                    last_success = 0
+                if last_success > max_iterations_without_improvement and intensity == 1:
+                    intensity = 0
         count += 1
                 
                     
