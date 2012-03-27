@@ -10,8 +10,9 @@ Pass any number of filenames, detangle will extract all trees, and render tangle
 combinations of trees.
 """
 
-line_gap = 12
-line_region_width = 220
+line_gap = 5
+line_region_width = 260
+line_darkness = 0.3
 
 from detangle import tree, node
 from sys import argv
@@ -73,10 +74,10 @@ first_tree = None
 def draw_tree(ct, tr, x_pos, height):
     ct.set_source_rgb(0, 0, 0)
     widest = 0
-    x, y, w, h = ct.text_extents("Tree" + tr.name)[:4]
+    x, y, w, h = ct.text_extents("Tree: " + tr.name)[:4]
     widest = w
     ct.move_to(x_pos, 0)
-    ct.show_text("Tree" + tr.name)
+    ct.show_text("Tree: " + tr.name)
     vert = height
     for l in tr.leaves():
         x, y, w, h = ct.text_extents(l)[:4]
@@ -87,13 +88,13 @@ def draw_tree(ct, tr, x_pos, height):
     return widest
 
 def draw_lines(ct, left, right, x1, x2, height):
-    ct.set_source_rgba(0, 0, 0, 0.50)
+    ct.set_source_rgba(0, 0, 0, line_darkness)
     b = right.leaves()
     t = dict((b[i],i) for i in range(0,len(b)))
     i = 1
     for l in left.leaves():
-        ct.move_to(x1, height * i - (height / 2))
-        ct.line_to(x2, height * (t[l] + 1) - (height / 2))
+        ct.move_to(x1, height * i - (height / 3))
+        ct.line_to(x2, height * (t[l] + 1) - (height / 3))
         ct.stroke()
         i += 1
 
@@ -144,8 +145,10 @@ if __name__=='__main__':
             left_tree = right_tree
             combos.remove(valid[0])
         else:
-            print "Could not complete " , combos
-            combos = []
+            left_x += w + line_gap
+            left_tree = combos[0][0]
+            w = draw_tree(ct, left_tree, left_x, height)
+            
             
 
     surf.finish()

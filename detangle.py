@@ -196,6 +196,23 @@ def tangle_count(a, b):
             count += 1
     return count
 
+def flatness_count_all():
+    """ This function computes a penalty based on the angle of the lines"""
+    l = [tr.leaves() for tr in trees.itervalues()]
+    count = 0
+    for (a,b) in itertools.combinations(l,2):
+        count = count + flatness_count(a,b)
+    return count
+
+def flatness_count(a, b):
+    """ This function computes an angle penalty """
+    count = 0
+    t = dict((b[i],i) for i in range(0,len(b)))
+    
+    for i in range(0,min(len(a),len(b))):
+        count += abs(i-t[a[i]])
+    return count
+
 def alpha_count_all():
     """ This function computes a penalty for mis-alphabetized trees
     """
@@ -223,7 +240,8 @@ def minimize_this():
     you can use either or both, and you can multiply the returned
     values to adjust the importance of alphabetizing vs. tangling
     or you can add your own measure to be minimized. """
-    return tangle_count_all() + (alpha_count_all()*0.5)
+    #return tangle_count_all() + (alpha_count_all()*0.5)
+    return flatness_count_all() + tangle_count_all()  + (alpha_count_all()*0.5)
 
 tree_list = []        
 trees = {}
