@@ -49,7 +49,7 @@ class tree:
          The structure of the tree is never changed once it is created. Instead,
          twists are stored separately and applied on the fly in the output functions.
     """
-    def __init__(self, line):
+    def __init__(self, line=None):
         self.root = None
         self.name = line[5:line.find(' ',6)]
         self.parse(line[line.find('(',6)+1:].strip(';'))
@@ -86,6 +86,9 @@ class tree:
                     curstr = curstr[min(comma,paren):]
                 else:
                     curstr = ''
+
+    def init_from_phylo(self, phylo):
+        print phylo
 
     def leaves(self):
         d = deque()
