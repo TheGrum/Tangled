@@ -121,6 +121,20 @@ class tree:
 
     def writable(self):
         return self.root.writable()
+
+    def max_depth(self):
+        current = self.root
+        depth = 0
+        max_depth = 0
+        stack = [(self.root,0)]
+        while len(stack) > 0:
+            (current, depth) = stack.pop()
+            if current.has_children():
+                for i in current.children:
+                    max_depth = max(max_depth, depth+1)
+                    stack.append((i, depth+1))
+        return max_depth
+                
     
 class node:
     """ node: this class represents all the nodes of a tree, both the branching nodes,
@@ -144,6 +158,9 @@ class node:
         d.rotate(self.twist)
         return d
 
+    def has_children(self):
+        return (len(self.children) > 0)
+
     def leaves(self, d):
         if len(self.children) == 0:
             d.append(self.name)
@@ -165,7 +182,7 @@ class node:
         else:
             d = self.get_children()
             for n in d:
-                n.output(depth+1)
+                n.output(depth+1)               
 
     def writable(self):
         if len(self.children) == 0:
