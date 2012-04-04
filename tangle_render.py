@@ -202,7 +202,6 @@ if __name__=='__main__':
     f.close()
             
     combos = list(itertools.combinations(tree_list,2))
-    combos = combos[0:1]
     while len(combos) > 0:
         left_tree = combos[0][0]
         right_tree = combos[0][1]
@@ -221,7 +220,6 @@ if __name__=='__main__':
         
         """ We have a left tree and a right tree - draw the right tree, and the links """
         w = draw_branches(ct, left_tree, 0, height - height / 3, height, 20, True)
-        print 'Width ' , w
         left_x = w
         w = draw_tree(ct, left_tree, left_x + line_gap, height)
         draw_lines(ct, left_tree, right_tree, left_x + w + line_gap, left_x + w + line_gap + line_region_width, height)
