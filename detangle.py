@@ -51,9 +51,10 @@ class tree:
     """
     def __init__(self, line=None):
         self.root = None
-        self.name = line[5:line.find(' ',6)]
-        self.parse(line[line.find('(',6)+1:].strip(';'))
-        self.twist_apply_list = self.non_leaves()
+        if not line is None:
+            self.name = line[5:line.find(' ',6)]
+            self.parse(line[line.find('(',6)+1:].strip(';'))
+            self.twist_apply_list = self.non_leaves()
         #print self.twist_apply_list
 
     def parse(self, line):
@@ -88,8 +89,18 @@ class tree:
                     curstr = ''
 
     def init_from_phylo(self, phylo):
-        print phylo
+        self.name = phylo.name
+        self.root = node()
+        self.init_from_phylo_clade(self.root, phylo.clade)
 
+    def init_from_phylo_clade(self, cur, clade):
+        if not clade.name is None:
+            cur.name = clade.name
+        for i in clade.clades:
+            n = node()
+            self.init_from_phylo_clade(n, i)
+            cur.add(n)
+            
     def leaves(self):
         d = deque()
         self.root.leaves(d)
@@ -263,7 +274,7 @@ def minimize_this():
     #return tangle_count_all() + (alpha_count_all()*0.5)
     return flatness_count_all() + tangle_count_all()  + (alpha_count_all()*0.5)
 
-tree_list = []        
+tree_list = []
 trees = {}
 twists = {}
 first_tree = None
@@ -289,11 +300,12 @@ if __name__=='__main__':
             trees[tr.name] = tr
             twists[tr.name] = tr.get_twists()
             #print trees
-    for tr in trees.itervalues():
+    for tr in tree_list():
         print tr
         tr.print_tree()
         print tr.get_twists()
         pass
+    
     print tangle_count_all()
     write("result.dat")
 
