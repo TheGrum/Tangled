@@ -37,12 +37,13 @@ the process before the max_count implies it should, because it is actually count
 as fast.
 """
 
-starting_intensity = 50
-number_of_iterations_before_reducing_intensity = 50
-max_count = 5000
-max_iterations_without_improvement = 5000
-intensity_reduction = 0.99
-skip_first_tree = 0
+g_starting_intensity = 50
+g_number_of_iterations_before_reducing_intensity = 50
+g_max_count = 2500
+g_max_iterations_without_improvement = 2500
+g_intensity_reduction = 0.99
+g_skip_first_tree = 0
+g_output_filename = "result.dat"
 
 class tree:
     """ tree: this class encapsulates the individual trees, and anchors the root
@@ -92,6 +93,7 @@ class tree:
         self.name = phylo.name
         self.root = node()
         self.init_from_phylo_clade(self.root, phylo.clade)
+        self.twist_apply_list = self.non_leaves()
 
     def init_from_phylo_clade(self, cur, clade):
         if not clade.name is None:
@@ -206,7 +208,7 @@ class node:
             ret = ret.rstrip(",") + ")"
             return ret
 
-def tangle_count_all():
+def tangle_count_all(trees):
     """ This function applies a tangle counting function to every combination of trees
     """
     l = [tr.leaves() for tr in trees.itervalues()]
@@ -227,7 +229,7 @@ def tangle_count(a, b):
             count += 1
     return count
 
-def flatness_count_all():
+def flatness_count_all(trees):
     """ This function computes a penalty based on the angle of the lines"""
     l = [tr.leaves() for tr in trees.itervalues()]
     count = 0
@@ -244,7 +246,7 @@ def flatness_count(a, b):
         count += abs(i-t[a[i]])
     return count
 
-def alpha_count_all():
+def alpha_count_all(trees):
     """ This function computes a penalty for mis-alphabetized trees
     """
     l = [tr.leaves() for tr in trees.itervalues()]
@@ -255,7 +257,7 @@ def alpha_count_all():
                 count += 1
     return count
 
-def write(filename):
+def write(filename, tree_list):
     with open(filename, 'w') as f:
         f.write("#NEXUS \n\n\n")
         f.write("Begin trees;\n")
@@ -264,7 +266,7 @@ def write(filename):
             f.write("\n\n")
         f.write("end;\n")
 
-def minimize_this():
+def minimize_this(trees):
     """ This function needs to return a value to be minimized.
     tangle_count_all counts the crossings
     alpha_count_all counts the alphabetic ordering failures
@@ -272,50 +274,50 @@ def minimize_this():
     values to adjust the importance of alphabetizing vs. tangling
     or you can add your own measure to be minimized. """
     #return tangle_count_all() + (alpha_count_all()*0.5)
-    return flatness_count_all() + tangle_count_all()  + (alpha_count_all()*0.5)
+    return flatness_count_all(trees) + tangle_count_all(trees)  + (alpha_count_all(trees)*0.5)
 
 tree_list = []
-trees = {}
-twists = {}
-first_tree = None
+g_starting_intensity = 50
+g_number_of_iterations_before_reducing_intensity = 50
+g_max_count = 5000
+g_max_iterations_without_improvement = 5000
+g_intensity_reduction = 0.99
+g_skip_first_tree = 0
 
-if __name__=='__main__':
-    """
-    Loop over all files, reading in all available trees.
-    Print the results (for testing/validation purposes).
-    Calculate an initial minimization function value,
+def process_trees(tree_list, starting_intensity=g_starting_intensity,
+    number_of_iterations_before_reducing_intensity=g_number_of_iterations_before_reducing_intensity,
+    max_count = g_max_count,
+    max_iterations_without_improvement = g_max_iterations_without_improvement,
+    intensity_reduction = g_intensity_reduction,
+    skip_first_tree = g_skip_first_tree,
+    output_filename = g_output_filename):
+    """Calculate an initial minimization function value,
     then iteratively take each tree in turn,
     apply _intensity_ random twists to it, and compare the
     overall result with *all* trees for the minimization function.
     Slowly reduce the intensity over time as continued operation
     at a given intensity level ceases to produce improvement.
     """
-    for line in fileinput.input():
-        #line = line.trim()
-        if line[0:4] == 'tree':
-            tr = tree(line)
-            if first_tree == None:
-                first_tree = tr.name
-            tree_list.append(tr)
-            trees[tr.name] = tr
-            twists[tr.name] = tr.get_twists()
-            #print trees
-    for tr in tree_list():
-        print tr
+    first_tree = None
+    trees = {}
+    twists = {}
+    for tr in tree_list:
+        if first_tree == None:
+            first_tree = tr.name
         tr.print_tree()
-        print tr.get_twists()
-        pass
+        trees[tr.name] = tr
+        twists[tr.name] = tr.get_twists()
     
-    print tangle_count_all()
-    write("result.dat")
+    print tangle_count_all(trees)
+    write(output_filename,tree_list)
 
-    best = minimize_this()
+    best = minimize_this(trees)
     count = 1
     intensity = starting_intensity
     last_success = 0
     flip = 1
     while intensity > 0 and count < max_count:
-        print "Iteration " + str(count) + ", Intensity " + str(intensity) + ", Optimize " + str(best) + ", Tangle Count " + str(tangle_count_all())
+        print "Iteration " + str(count) + ", Intensity " + str(intensity) + ", Optimize " + str(best) + ", Tangle Count " + str(tangle_count_all(trees))
         for i in range(0,len(trees)):
             if skip_first_tree == 0 or trees[trees.keys()[i]].name <> first_tree:
                 t = list(twists[twists.keys()[i]])
@@ -323,13 +325,13 @@ if __name__=='__main__':
                 for j in range(0,intensity):
                     t[random.randint(0,len(t)-1)] += 1
                 trees[trees.keys()[i]].apply_twists(t)
-                cur = minimize_this()
+                cur = minimize_this(trees)
                 if cur < best:
                     """ If we succeeded in finding a better result, preserve it """
                     last_success = 0
                     twists[twists.keys()[i]] = t
                     best = cur
-                    write("result" + str(flip) + ".dat")
+                    write("result" + str(flip) + ".dat",tree_list)
                     flip = 3 - flip 
                 else:
                     """ Our new result is no better, keep the old tree """
@@ -341,7 +343,22 @@ if __name__=='__main__':
                 if last_success > max_iterations_without_improvement and intensity == 1:
                     intensity = 0
         count += 1
-    write("result.dat")
-                
+    write(output_filename,tree_list)
+
+if __name__=='__main__':
+    """
+    Loop over all files, reading in all available trees.
+    Print the results (for testing/validation purposes).
+    """
+    for line in fileinput.input():
+        #line = line.trim()
+        if line[0:4] == 'tree':
+            tr = tree(line)
+            print tr
+            tree_list.append(tr)
+            #trees[tr.name] = tr
+            #twists[tr.name] = tr.get_twists()
+            #print trees
+    process_trees(tree_list)
                     
                 
