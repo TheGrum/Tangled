@@ -225,8 +225,11 @@ def tangle_count(a, b):
     t = dict((b[i],i) for i in range(0,len(b)))
     
     for i in range(1,min(len(a),len(b))):
-        if t[a[i]] < t[a[i-1]]:
-            count += 1
+        try:
+            if t[a[i]] < t[a[i-1]]:
+                count += 1
+        except KeyError, e:
+            pass
     return count
 
 def flatness_count_all(trees):
@@ -243,7 +246,10 @@ def flatness_count(a, b):
     t = dict((b[i],i) for i in range(0,len(b)))
     
     for i in range(0,min(len(a),len(b))):
-        count += abs(i-t[a[i]])
+        try:
+            count += abs(i-t[a[i]])
+        except KeyError, e:
+            pass       
     return count
 
 def alpha_count_all(trees):

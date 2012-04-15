@@ -93,9 +93,10 @@ def draw_lines(ct, left, right, x1, x2, height):
     t = dict((b[i],i) for i in range(0,len(b)))
     i = 1
     for l in left.leaves():
-        ct.move_to(x1, height * i - (height / 3))
-        ct.line_to(x2, height * (t[l] + 1) - (height / 3))
-        ct.stroke()
+        if t.has_key(l):
+            ct.move_to(x1, height * i - (height / 3))
+            ct.line_to(x2, height * (t[l] + 1) - (height / 3))
+            ct.stroke()
         i += 1
 
 def draw_branches(ct, tr, x_pos, y_pos, height, branch_length, facing_right = True, depth = 0, current = None, max_depth = 0):   
