@@ -63,6 +63,7 @@ class tree:
         self.root = node();
         cur = self.root;
         stack = [self.root];
+        print line
         while len(curstr) > 0:
             if curstr[0] == '(':
                 temp = node()
